@@ -35,14 +35,11 @@ git clone https://github.com/dwrolvink/flood.git
 ### Test run
 Go into the newly created folder and run the application to test it:
 ```bash
-cd flood_go
+cd flood
 go run main.go
 ```
 
-You should see a white screen with black squares popping in and out of view.
-There should be a red label in the top right corner, a spinning cat, and red text
-saying hello. When you press a key, the key event should be printed in black for
-some seconds.
+You should see a white screen with green and red blocks rushing towards eachother.
 
 To compile the application, and then run it, you can do the following:
 ```bash
