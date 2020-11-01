@@ -1,0 +1,3 @@
+rm flood_go
+go build -v
+./flood_go
