@@ -1,5 +1,5 @@
 # Flood go
-
+![Demo](readme/flood.gif)
 
 # Installation
 ### Install Go
@@ -18,6 +18,7 @@ go get github.com/veandco/go-sdl2/ttf
 ```
 
 If you now look in your GOPATH, you'll find a pkg and a src folder.
+> GOPATH defaults to `$HOME/go`
 
 ### Clone this repository to your computer
 Go to the folder where you want to clone this folder to. In my case:
