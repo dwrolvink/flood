@@ -1,4 +1,5 @@
 # Flood go
+> Go simulation where two colonies fight for supremacy 
 ![Demo](readme/flood.gif)
 
 # Installation
