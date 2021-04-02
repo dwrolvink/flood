@@ -4,7 +4,7 @@ import (
 	"fmt"        // used for outputting to the terminal
 	//"time"       // used for pausing, measuring duration, etc
 	"math/rand"  // random number generator
-	"math"
+	//"math"
 	//"sync"
 )
 
