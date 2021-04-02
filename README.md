@@ -42,7 +42,7 @@ cd flood
 go run main.go
 ```
 
-You should see a white screen with green and red blocks rushing towards eachother.
+You should see a black screen with green and red blocks rushing towards eachother.
 
 To compile the application, and then run it, you can do the following:
 ```bash
@@ -63,4 +63,6 @@ Now you can build and run the program by doing:
 
 # Controls
 - Space to reset
-- Click (left/right) to add a block of color somewhere
+- 1: Show the cell amounts
+- 2: Show the smell
+- 0: Kill green 
