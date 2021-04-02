@@ -43,3 +43,10 @@ func AbsInt(a, b int) int {
 	}
 	return a - b
 }
+
+func GetPos(mouseX int32, mouseY int32, cellSize int32) [2]int32 {
+	var row = int32(math.Floor(float64(mouseY)/float64(cellSize)))
+	var col = int32(math.Floor(float64(mouseX)/float64(cellSize)))
+
+	return [2]int32{row, col}
+}
