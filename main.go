@@ -19,7 +19,6 @@ import (
 // subpackages
 import (
 	"flood_go/graphicsx"
-	//"flood_go/world"
 	"flood_go/text"
 	cfg "flood_go/config"
 	"flood_go/game"

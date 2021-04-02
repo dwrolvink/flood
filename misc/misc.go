@@ -1,5 +1,11 @@
 package misc
 
+// Import built-in packages
+import (
+	//"fmt"        // used for outputting to the terminal
+	"math"
+)
+
 func AddUint8(a, b uint8) uint8 {
 	var max = 255 - a
 	if b > max {
