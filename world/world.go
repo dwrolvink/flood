@@ -119,13 +119,13 @@ func ExecuteExpedition(exp cell.Expedition) {
 			// won, take over cell
 			exp.Target.UserId = exp.Source.UserId
 			exp.Target.BaseColor = exp.Source.BaseColor
-			exp.Target.Amount = uint(remainder)
+			exp.Target.Amount = uint8(remainder)
 			exp.Target.Register1 = 0
 			exp.Target.Register2 = 0
 			exp.Target.Register3 = 0			
 		} else if remainder < 0 {
 			// lost, just set negative of remainder
-			exp.Target.Amount = uint(-1 * remainder)
+			exp.Target.Amount = uint8(-1 * remainder)
 		}
 	}
 

@@ -70,4 +70,3 @@ func NewTextObject(toc TextObjectConfig) *TextObject {
 
 
 
-

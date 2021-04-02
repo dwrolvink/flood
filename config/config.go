@@ -2,50 +2,68 @@ package config
 
 // Import built-in packages
 import (
-	"math"
+	//"math"
 	"time"       // used for pausing, measuring duration, etc
 )
 
-// You can set config here that can be passed around in a struct
-// To add a value, add an entry in the struct below, and then
-// set it in GetConfig()
+const (
 
-// To use the config some place, first import this subpackage:
-//		import "flood_go/config"
-//
-// Then, you can get the struct by using:
-//		var cfg = config.GetConfig()
-//
-// And finally, use the data:
-// 		fmt.Println(cfg.ScreenTitle)
+	// Cell Array Keys (used for datagrid.Cells[r][c][KEY])
+	KEY_AMOUNT = 0
+	KEY_I_AMOUNT = 3	// intermediate, used to update amount when moving	
+	KEY_SMELL = 1
+	KEY_I_SMELL = 2		// intermediate, used to update amount when calculating smell
+
+	// LUT Keys (used for datagrid.NeighbourLUT[r][c][KEY])
+	LUTKEY_ROW = 0
+	LUTKEY_COL = 1
+	LUTKEY_EXISTS = 2
+
+	// Screen Settings
+	COLS = 100
+	ROWS = 100
+	CELL_SIZE = 4
+
+	// Loop Settings
+	INTERVAL = 0		// Amount of ms to sleep after each game loop
+
+	// Draw Settings
+	DRAW_BETWEEN_BATTLE = false
+)
 
 type Config struct {
-	ScreenTitle string
-	ScreenWidth int32
-	ScreenHeight int32
-	CellSize int32
-	Cols int32
-	Rows int32
-	SleepMiliSeconds time.Duration
-	ShowDebugText bool
+	ScreenTitle string		// Set by caller
+	ScreenWidth int32		// Set in Init()
+	ScreenHeight int32		// Set in Init()
+	CellSize int32			// From CONST
+	Cols int32				// From CONST
+	Rows int32				// From CONST
+	Interval time.Duration	// From CONST / Adjusted in Init()
+	ShowDebugText bool		// Set by caller
+	DrawBetweenBattle bool	// From CONST
 }
 func (this *Config) Init() {  
-	this.Rows = int32(math.Floor(float64(this.ScreenHeight)/float64(this.CellSize)))
-	this.Cols = int32(math.Floor(float64(this.ScreenWidth)/float64(this.CellSize)))
+	this.Rows = ROWS
+	this.Cols = COLS
+	this.CellSize = CELL_SIZE
+	this.ScreenWidth = COLS * CELL_SIZE
+	this.ScreenHeight = ROWS * CELL_SIZE
+	this.Interval = INTERVAL
+	this.DrawBetweenBattle = DRAW_BETWEEN_BATTLE
+
+	if this.DrawBetweenBattle {
+		this.Interval /= 2
+	}
 }
 
+// If you need calculated values you can use this function
+// Currently only for calculating ScreenWidth/-Height
+// Otherwise, you can use the CONSTs directly
 func GetConfig() Config {
 	var config = Config{
 		ScreenTitle: "SDL Test Application",
-		ScreenWidth: 800,
-		ScreenHeight: 600,
-		CellSize: 6,
-		SleepMiliSeconds: 0,
 		ShowDebugText: false,
 	}
-
 	config.Init()
-
 	return config
-
 }
