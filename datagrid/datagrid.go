@@ -59,19 +59,18 @@ func (this *DataGrid) Clear() {
 	}
 }
 
-
+/* Set cfg.KEY_AMOUNT and cfg.KEY_I_AMOUNT simultaneously */
 func (this *DataGrid) SetCell(row, col int, amount int) {  
 	this.Cells[row][col][cfg.KEY_AMOUNT] = amount 
 	this.Cells[row][col][cfg.KEY_I_AMOUNT] = amount 
 }
 
+/* Alias for SetCell(r, c, 0) */
 func (this *DataGrid) Kill(row, col int) {
 	this.SetCell(row, col, 0)
-	//this.Cells[row][col][1] = 0
 }
 
-/* 
-	Makes a lookup table that allows us to lookup if cell r,c has 
+/* 	Makes a lookup table that allows us to lookup if cell r,c has 
    	top/bottom/left/right neighbour  
 */
 func (this *DataGrid) CalculateNeighbourLUT() {
@@ -102,8 +101,7 @@ func (this *DataGrid) CalculateNeighbourLUT() {
 	}
 }
 
-
-
+/* Not used atm */
 func (this *DataGrid) ClearSmell() {  
 	// reset smell of every cell to 0
 	
@@ -114,70 +112,6 @@ func (this *DataGrid) ClearSmell() {
 	}
 }
 
-
-func (this *DataGrid) UpdateSmell() {  
-
-	//var amount int
-
-	var nb_row int
-	var nb_col int
-	var nb_smell int
-	var nb_amount int
-
-	var highest_amount int
-	var highest_smell int
-	var highest_val int	
-
-
-	// calc intermediate smell
-	for row := range this.Cells {
-		for col := range this.Cells[row] {
-
-			// reset vars
-			highest_amount = 0
-			highest_smell = 0
-			//amount = this.Cells[row][col][0]
-			highest_val = 0
-
-			// calc sum of nbs
-			for i := 0; i < 4; i++ {
-				if this.NeighbourLUT[row][col][i][2] == 1 {
-
-					nb_row  = this.NeighbourLUT[row][col][i][0]
-					nb_col  = this.NeighbourLUT[row][col][i][1]
-
-					nb_smell = this.Cells[nb_row][nb_col][1]
-					nb_amount = this.Cells[nb_row][nb_col][0]
-
-					if nb_smell > highest_smell {
-						highest_smell = nb_smell
-					}
-					if nb_amount > highest_amount {
-						highest_amount = nb_amount
-					}					
-				}
-			}
-
-			highest_val = highest_amount
-			if highest_smell > highest_val {
-				highest_val = highest_smell
-			}
-
-
-			
-
-			// update intermediate smell
-			this.Cells[row][col][2] = misc.Normalize(highest_val - 1, math.MaxInt64, 0)
-		}
-	}
-
-	// update smell
-	for row := range this.Cells {
-		for col := range this.Cells[row] {	
-			this.Cells[row][col][1] = this.Cells[row][col][2]
-		}
-	}
-}
 
 func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 	// Ephemeral
@@ -217,7 +151,8 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 	return (amount + (total_sum / number_of_nbs))
 }
 
-func (this *DataGrid) UpdateSmell4() {  
+
+func (this *DataGrid) UpdateSmell() {  
 
 
 	var _smell int
@@ -252,6 +187,7 @@ func (this *DataGrid) UpdateSmell4() {
 	}
 }
 
+
 func NormalizeSmellColor(smell int) int {
 	
 	if smell == 0 { return 0}
@@ -269,7 +205,7 @@ func NormalizeAmountColor(amount int) int {
 	return s
 }
 
-
+/* un-implemented atm, in favour of pixelbased drawing */
 func (this *DataGrid) Draw(graphics *graphicsx.Graphics, numbers_text *[256]*text.TextObject, cell_size int32, print_val int, print_text bool){
 	// set alpha
 	var alpha int

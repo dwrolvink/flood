@@ -81,7 +81,10 @@ func (this *Player) SetEnemy(Enemy *Player) {
 }
 
 func (this *Player) SetStartCell(row, col, amount int) {
+	// save for when reset is called
 	this.StartCell = [3]int{row, col, amount}
+
+	// apply
 	this.DataGrid.SetCell(row, col, amount)
 }
 
@@ -90,9 +93,13 @@ func (this *Player) SetStartCell(row, col, amount int) {
 // -------------------------------------------------------------------------------------------------------------------------------------------------
 
 func (this *Player) Reset() { 
+	// Empty datagrid
 	this.DataGrid.Clear()
 
+	// Reapply startcell
 	this.DataGrid.SetCell(this.StartCell[0], this.StartCell[1], this.StartCell[2])
+
+	// [idea] opt-in to use random starting positions
 }
 
 func (this *Player) KillAll() { 
@@ -117,9 +124,9 @@ func (this *Player) UpdateInternalState(done chan bool) {
 	// Update smell so the cells know what's around them
 	// (Use different methods for different players)
 	if this.UserId == 1 {
-		this.DataGrid.UpdateSmell4()
+		this.DataGrid.UpdateSmell()
 	} else {
-		this.DataGrid.UpdateSmell4()
+		this.DataGrid.UpdateSmell()
 	}
 	
 	// Say where the cell wants to move to 
@@ -147,7 +154,6 @@ func (this *Player) Move() {
 		}
 	}
 }
-
 
 /* 	Looks around at its neighbours, and determines where to send resources
 	The change in resources is tracked in the intermediate amount register (KEY_I_AMOUNT)
@@ -262,7 +268,6 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 
 	} 
 }
-
 
 /*	Looks at the intermediate amount of a cell, and compares it to the same cell of the enemy
 	When both have a non-zero amount, the result is calculated
@@ -396,6 +401,7 @@ func (this *Player) Grow() {
 // =================================================================================================================================================
 // DRAW
 // -------------------------------------------------------------------------------------------------------------------------------------------------
+/* goroutine wrapper for datagrid.Draw_PixelBased() */
 func (this *Player) DrawPixels(done chan bool, numbers_text *[256]*text.TextObject, print_val int, print_text bool) {
 	// Draw needs a lot of data from the DataGrid, so it is housed there
 	this.DataGrid.Draw_PixelBased(numbers_text, print_val, print_text)
@@ -404,6 +410,7 @@ func (this *Player) DrawPixels(done chan bool, numbers_text *[256]*text.TextObje
 	done <- true
 }
 
+/* Couldn't put this in with DrawPixels :( SDL doesn't cooperate well with goroutines */
 func (this *Player) UpdateTexture() {
 	this.Texture.Update(nil, this.Pixels, int(Config.ScreenWidth*4))
 }
