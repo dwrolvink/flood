@@ -314,7 +314,6 @@ func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
 
 	// get list of neighbours, and their data
 	nbs := [4][7]int{} 
-
 	for i := 0; i < 4; i++ {
 		nb_exists = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_EXISTS]
 		if nb_exists == 0 { continue }
@@ -347,12 +346,12 @@ func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
 			least_friendly_smell_nb = i
 		}
 
-		if nbs[i][6] > most_enemy_smell || nbs[i][6] == most_enemy_smell && f > 0.5{
+		if nbs[i][6] > 0 && (nbs[i][6] > most_enemy_smell || nbs[i][6] == most_enemy_smell && f > 0.5 ) {
 			most_enemy_smell = nbs[i][6]
 			most_enemy_smell_nb = i
 		}	
 		
-		if nbs[i][5] > 0 && nbs[i][5] < least_nz_enemy_amount || nbs[i][5] == least_nz_enemy_amount && f > 0.5{
+		if nbs[i][5] > 0 && (nbs[i][5] < least_nz_enemy_amount || nbs[i][5] == least_nz_enemy_amount && f > 0.5) {
 			least_nz_enemy_amount = nbs[i][6]
 			least_nz_enemy_amount_nb = i
 		}
@@ -369,17 +368,18 @@ func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
 	if most_enemy_smell_nb != -1 {
 		target_neighbour = most_enemy_smell_nb
 
-	} else if least_nz_enemy_amount < math.MaxInt64 {
+	} else if least_nz_enemy_amount_nb != -1 {
 		target_neighbour = least_nz_enemy_amount_nb
-	} else if least_amount < math.MaxInt64 {
+
+	} else if least_amount_nb != -1{
 			target_neighbour = least_amount_nb
 		
 	// pick neighbour with least friendly smell
-	} else if least_friendly_smell < math.MaxInt32 {
+	} else if least_friendly_smell_nb != -1 {
 		target_neighbour = least_friendly_smell_nb
 
 	// pick neighbour with least friendly amount (and half exp amount)
-	} else if least_friendly_amount < math.MaxInt32 {
+	} else if least_friendly_amount_nb != -1 {
 		exp_amount /= 2
 		target_neighbour = least_friendly_amount_nb
 	} 
