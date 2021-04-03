@@ -294,16 +294,16 @@ func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
 	least_friendly_smell_nb := 0
 
 	most_enemy_smell := 0
-	most_enemy_smell_nb := 0
+	most_enemy_smell_nb := -1
 
 	least_nz_enemy_amount := math.MaxInt64
-	least_nz_enemy_amount_nb := 0	
+	least_nz_enemy_amount_nb := -1	
 
 	least_friendly_amount := math.MaxInt64
-	least_friendly_amount_nb := 0
+	least_friendly_amount_nb := -1
 
 	least_amount := math.MaxInt64
-	least_amount_nb := 0
+	least_amount_nb := -1
 	sum_amount := 0
 
 	// When we pick a neighbour, we can set it here
@@ -366,7 +366,7 @@ func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
 
 	
 	// pick neighbour with highest enemy smell
-	if most_enemy_smell > 0 {
+	if most_enemy_smell_nb != -1 {
 		target_neighbour = most_enemy_smell_nb
 
 	} else if least_nz_enemy_amount < math.MaxInt64 {
