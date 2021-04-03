@@ -1,5 +1,9 @@
 package graphicsx
 
+import (
+	cfg "flood_go/config"
+)
+
 // =====================================================================
 // 				Functions: Pixel based
 // =====================================================================
@@ -33,7 +37,7 @@ func Clear(pixels *[]byte) {
 
 /* Set all pixels to 0 */
 func SetPixel(x, y int, c [4]byte, pixels *[]byte) {
-	index := (y* int(cfg.ScreenWidth) + x) * 4
+	index := (y* int(cfg.COLS*cfg.CELL_SIZE) + x) * 4
 
 	if index < len(*pixels)-4 && index >= 0 {
 		(*pixels)[index] = c[0]

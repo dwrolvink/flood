@@ -2,15 +2,16 @@ package config
 
 const (
 	// Screen Settings
-	COLS = 200
-	ROWS = 200
-	CELL_SIZE = 2
+	COLS = 220
+	ROWS = 220
+	CELL_SIZE = 3
 
 	// Loop Settings
-	INTERVAL = 0		// Amount of ms to sleep after each game loop
+	INTERVAL_NS = 0 * 1000000		// Amount of nanoseconds to make each game loop last for (ns = 1000 us = 1000 000 ms)
+									// If the loop takes longer, than this will be allowed
 
-	// Draw Settings
-	DRAW_BETWEEN_BATTLE = false
+	// GAME SETTINGS
+	FLASHY_EEL = false 				// Mystery setting! (toggle with 'E')
 
 	// Cell Array Keys (used for datagrid.Cells[r][c][KEY])
 	KEY_AMOUNT = 0

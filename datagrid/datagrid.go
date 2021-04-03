@@ -3,16 +3,13 @@ package datagrid
 import (
 	"fmt"        // used for outputting to the terminal
 	//"time"       // used for pausing, measuring duration, etc
-	"math/rand"  // random number generator
+	//"math/rand"  // random number generator
 	//"math"
 	//"sync"
 )
 
 // Import internal packages
 import (
-	"flood_go/graphicsx"	
-	"flood_go/text"
-	"flood_go/misc"
 	cfg "flood_go/config"
 )
 
@@ -34,11 +31,12 @@ type DataGrid struct {
 	BaseColor *sdl.Color
 	Enemy *DataGrid
 
-	// temp
-	Q [5]int 
 	Pixels *[]byte
 
 	NeighbourLUT [ROWS][COLS][4][3]int // row, col, exists
+
+	// temp
+	Amount *[]byte
 }
 
 func (this *DataGrid) Init() {
@@ -105,8 +103,8 @@ func (this *DataGrid) CalculateNeighbourLUT() {
 func (this *DataGrid) ClearSmell() {  
 	// reset smell of every cell to 0
 	
-	for row := range this.Cells {
-		for col := range this.Cells[row] {
+	for row := 0; row < cfg.ROWS; row++ {
+		for col := 0; col < cfg.COLS; col++ {
 			this.Cells[row][col][1] = 0
 		}
 	}
@@ -114,6 +112,10 @@ func (this *DataGrid) ClearSmell() {
 
 
 func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
+	// References 
+	var NeighbourLUT = &(this.NeighbourLUT)
+	var Cells = &(this.Cells)
+
 	// Ephemeral
 	var nb_row int
 	var nb_col int
@@ -123,16 +125,16 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 	// Used to calc the avg
 	number_of_nbs := 0
 	total_sum := 0
-	amount := this.Cells[row][col][cfg.KEY_AMOUNT]
+	amount := (*Cells)[row][col][cfg.KEY_AMOUNT]
 
 	// Collect data from all (existing) neighbours
 	for i := 0; i < 4; i++ {
-		if this.NeighbourLUT[row][col][i][cfg.LUTKEY_EXISTS] == 1 {
+		if (*NeighbourLUT)[row][col][i][cfg.LUTKEY_EXISTS] == 1 {
 			// Keep a tally of total existing neighbours to get a good avg
 			number_of_nbs ++
 
-			nb_row  = this.NeighbourLUT[row][col][i][cfg.LUTKEY_ROW]
-			nb_col  = this.NeighbourLUT[row][col][i][cfg.LUTKEY_COL]
+			nb_row  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_ROW]
+			nb_col  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_COL]
 
 			// If depth > 0: just ask the cell to give its average smell & add to total
 			if depth > 0 {
@@ -140,8 +142,8 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 
 			// Else: calc new smell for the cell & add to total
 			} else {
-				nb_smell = this.Cells[nb_row][nb_col][cfg.KEY_SMELL]
-				nb_amount = this.Cells[nb_row][nb_col][cfg.KEY_AMOUNT]
+				nb_smell = (*Cells)[nb_row][nb_col][cfg.KEY_SMELL]
+				nb_amount = (*Cells)[nb_row][nb_col][cfg.KEY_AMOUNT]
 				total_sum += nb_smell + nb_amount
 			}
 		}
@@ -152,14 +154,12 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 }
 
 
-func (this *DataGrid) UpdateSmell() {  
-
-
-	var _smell int
-
-	f := rand.Float64()
+func (this *DataGrid) UpdateSmell(f float64) {  
+	// References 
+	var Cells = &(this.Cells)
 
 	// calc intermediate smell
+	/*
 	for row := 0; row < cfg.ROWS; row++ {
 		for col := 0; col < cfg.COLS; col++ {
 
@@ -175,131 +175,63 @@ func (this *DataGrid) UpdateSmell() {
 			}			
 		
 			// update intermediate smell
-			this.Cells[row][col][cfg.KEY_I_SMELL] = _smell
+			(*Cells)[row][col][cfg.KEY_I_SMELL] = _smell
 		}
 	}
+	*/
+
+	// temp
+	done_top := make(chan bool)
+	done_bottom := make(chan bool)
+
+	go this.UpdateIntermediateSmell(done_top, 0, cfg.ROWS/2, f)
+	go this.UpdateIntermediateSmell(done_bottom, cfg.ROWS/2, cfg.ROWS, f)
+
+	<- done_top
+	<- done_bottom
 
 	// update smell
-	for row := range this.Cells {
-		for col := range this.Cells[row] {	
-			this.Cells[row][col][cfg.KEY_SMELL] = this.Cells[row][col][2]
-		}
-	}
-}
-
-
-func NormalizeSmellColor(smell int) int {
-	
-	if smell == 0 { return 0}
-	if smell < 20 { return 20}
-	if smell < 100 { return smell}
-	if smell < 10000 { return int(smell / 100) + 99}
-	return 255
-}
-
-func NormalizeAmountColor(amount int, max_out bool) int {
-	s := amount
-	if max_out {
-		if s > 0 {
-			return 255
-		}
-	}
-	if s > 255 {
-		return 255
-	}	
-	return s
-}
-
-/* un-implemented atm, in favour of pixelbased drawing */
-func (this *DataGrid) Draw(graphics *graphicsx.Graphics, numbers_text *[256]*text.TextObject, cell_size int32, print_val int, print_text bool){
-	// set alpha
-	var alpha int
-
-	// Draw & Rearm Loop
-	var x = int32(0)
-	var y = int32(0)
-	for row := range this.Cells {
-		for col := range this.Cells[row] {
-			// get cell 
-			current_cell := this.Cells[row][col]
-			
-			// get draw value
-			draw_value := current_cell[uint8(print_val)]
-
-			if draw_value > 0 {
-				// set Cell color
-				// set alpha
-				alpha = misc.Max255Int(20, draw_value)
-
-				// set color
-				(*graphics).SetSDLDrawColor(this.BaseColor, uint8(alpha))
-
-				// create rect
-				rect := sdl.Rect{x, y, cell_size, cell_size}
-					
-				// draw cell
-				(*graphics).Renderer.FillRect(&rect)	
-			
-				// draw text
-				if print_text {
-					(*graphics).Renderer.Copy((*numbers_text)[draw_value].Image.Texture, nil, &sdl.Rect{
-						x, 
-						y, 
-						(*numbers_text)[draw_value].Image.Width, (*numbers_text)[draw_value].Image.Height,
-					})	
-				}	
-			}			
-
-			x += cell_size
-		}
-		x = 0
-		y += cell_size
-	}		
-}
-
-func (this *DataGrid) Draw_PixelBased(numbers_text *[256]*text.TextObject, print_val int, print_text bool){
-	// Shorthand
-	cell_size := int32(cfg.CELL_SIZE)
-
-	// Erase pixels
-	graphicsx.Clear(this.Pixels)
-
-	// Convert SDL color to pixel value
-	var color = [4]byte{this.BaseColor.R, this.BaseColor.G, this.BaseColor.B, this.BaseColor.A}
-	
-	// Draw & Rearm Loop
-	var x = int32(0)
-	var y = int32(0)
 	for row := 0; row < cfg.ROWS; row++ {
 		for col := 0; col < cfg.COLS; col++ {
-			// get cell 
-			current_cell := this.Cells[row][col]
-			
-			// get draw value
-			draw_value := current_cell[uint8(print_val)]
-			
-			if draw_value > 0 {
-				if print_val == 0 {
-					draw_value = NormalizeAmountColor(draw_value, false)
-				}	
-				if print_val == 1 {
-					draw_value = NormalizeSmellColor(draw_value)
-				}	
-
-				color[3] = uint8(draw_value)
-				
-				graphicsx.SetSquare(int(x), int(y), int(cell_size), color, this.Pixels)
-			}			
-			x += cell_size
+			(*Cells)[row][col][cfg.KEY_SMELL] = (*Cells)[row][col][2]
 		}
-		x = 0
-		y += cell_size
-	}		
+	}
 }
 
+func (this *DataGrid) UpdateIntermediateSmell(done chan bool, row_start, row_end int, f float64) {  
+	var _smell int
+
+	// References 
+	var Cells = &(this.Cells)
+
+	// calc intermediate smell
+	for row := row_start; row < row_end; row++ {
+		for col := 0; col < cfg.COLS; col++ {
+
+			// Get Smell Average for current cell
+			_smell = this.GetAvgSmell(row, col, 0)
+			
+			// Adjust smell to allow for dissipation
+			if _smell > 200 {
+				_smell = int(float64(_smell) * 0.999)
+			}
+			if _smell > 0 && f > float64(_smell)/200 {
+				_smell -= 1
+			}			
+		
+			// update intermediate smell
+			(*Cells)[row][col][cfg.KEY_I_SMELL] = _smell
+		}
+	}
+
+	// signal that we're done
+	done <- true
+}
+
+
 func (this *DataGrid) KillAll() {
-	for row := range this.Cells {
-		for col := range this.Cells[row] {
+	for row := 0; row < cfg.ROWS; row++ {
+		for col := 0; col < cfg.COLS; col++ {
 			this.SetCell(row, col, 0)
 		}
 	}

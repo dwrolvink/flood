@@ -15,12 +15,12 @@ import (
 
 // subpackages
 import (
-	"flood_go/config"
+	cfg "flood_go/config"
 )
 
 var (
 	// Get game config
-	cfg = config.GetConfig()
+	Config = cfg.GetConfig()
 )
 
 
@@ -175,8 +175,8 @@ func Initialize_graphics() Graphics {
 	}
 
 	// try to create a window
-	window, err := sdl.CreateWindow(cfg.ScreenTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		cfg.ScreenWidth, cfg.ScreenHeight, sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow(Config.ScreenTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+		Config.ScreenWidth, Config.ScreenHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Failed to create renderer: %s\n", err)
 		os.Exit(2)

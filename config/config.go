@@ -6,7 +6,6 @@ import (
 	"time"       // used for pausing, measuring duration, etc
 )
 
-
 type Config struct {
 	ScreenTitle string		// Set by caller
 	ScreenWidth int32		// Set in Init()
@@ -14,9 +13,10 @@ type Config struct {
 	CellSize int32			// From CONST
 	Cols int32				// From CONST
 	Rows int32				// From CONST
-	Interval time.Duration	// From CONST / Adjusted in Init()
+	IntervalNs time.Duration	// From CONST 
 	ShowDebugText bool		// Set by caller
 	DrawBetweenBattle bool	// From CONST
+	FlashyEel bool			// From CONST / struct / toggle with 'e'
 }
 func (this *Config) Init() {  
 	this.Rows = ROWS
@@ -24,12 +24,8 @@ func (this *Config) Init() {
 	this.CellSize = CELL_SIZE
 	this.ScreenWidth = COLS * CELL_SIZE
 	this.ScreenHeight = ROWS * CELL_SIZE
-	this.Interval = INTERVAL
-	this.DrawBetweenBattle = DRAW_BETWEEN_BATTLE
-
-	if this.DrawBetweenBattle {
-		this.Interval /= 2
-	}
+	this.IntervalNs = INTERVAL_NS
+	this.FlashyEel = FLASHY_EEL
 }
 
 // If you need calculated values you can use this function

@@ -54,6 +54,16 @@ func AbsInt(a, b int) int {
 	return a - b
 }
 
+func TopInt64(a []int64) int64 {
+	var top int64 = 0
+	for i := 0; i < len(a); i++ {
+		if a[i] > top {
+			top = a[i]
+		}
+	}
+	return top
+}
+
 /* not used atm */
 func GetPos(mouseX int32, mouseY int32, cellSize int32) [2]int32 {
 	var row = int32(math.Floor(float64(mouseY)/float64(cellSize)))

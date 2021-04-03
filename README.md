@@ -66,3 +66,9 @@ Now you can build and run the program by doing:
 - 1: Show the cell amounts
 - 2: Show the smell
 - 0: Kill green 
+- F: Skip drawing (while pressed); game continues
+- E: Toggle Mystery setting (try it out!)
+
+# Further reading
+- SDL wrapper: https://github.com/veandco/go-sdl2
+- [The documentation of the wrapper is really useful](https://godoc.org/github.com/veandco/go-sdl2)

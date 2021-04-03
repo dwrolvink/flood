@@ -2,12 +2,14 @@ package main
 // =====================================================================
 // 				Imports
 // =====================================================================
+
 // Import built-in packages
 import (
 	//"os"
 	"fmt"        // used for outputting to the terminal
 	"time"       // used for pausing, measuring duration, etc
-	//"math/rand"  // random number generator
+	//"math"
+	"math/rand"  // random number generator
 	"strconv"	 // int to string
 )
 
@@ -21,6 +23,7 @@ import (
 	"flood_go/graphicsx"
 	"flood_go/text"
 	"flood_go/game"
+	//"flood_go/misc"
 	cfg "flood_go/config"
 )
 
@@ -31,6 +34,7 @@ var (
 	// CONTROLS
 	Running = true						// Setting this to false will exit main loop (exit program)
 	Paused = false						// Pause game execution (main loop continues on)
+	SkipDraw = false
 
 	ValueOfInterest = cfg.KEY_AMOUNT	// Which cell value to color the cells with
 	PrintText = false					// Whether to print text to show value (broken atm bc pixel printing is implemented)
@@ -49,42 +53,107 @@ var (
 )
 
 
+
 // This is the entry point for our app. Code execution starts here.
 func main() {
 
 	InitPlayers()
 
 	// Set the color that the screen will be cleared at
+	// (This will do little now that we use pixel based drawing)
 	Renderer.SetDrawColor(0, 0, 0, 0)           // red, green, blue, alpha (alpha = transparency)
+
+	// Manage the framerate
+	var TickStart time.Time
+	var TickDurationNs time.Duration
 
 	// Create channels to track when each player is done
 	// when using goroutines
-	done_red := make(chan bool)
-	done_green := make(chan bool)
+	done_red_top := make(chan bool)
+	done_green_top := make(chan bool)
+	done_red_bottom := make(chan bool)
+	done_green_bottom := make(chan bool)
+
+	// Seed so we have 
+	rand.Seed(time.Now().UnixNano())
+	
 		
 	for Running	{	
+		
+		TickStart = time.Now()
 
 		// when paused, skip the game/draw actions, but stay in the main loop and receive events
 		if Paused == false {
 
-			// Grow, Move, & Update Smell
-			go player_red.UpdateInternalState(done_red)
-			go player_green.UpdateInternalState(done_green)
-			<- done_red
-			<- done_green
+			// Randomness
+			f := rand.Float64()
 
-			// Draw in between update and battle if we want to see what happens during stalemates
-			if Config.DrawBetweenBattle {
-				DrawFrame()
-			}
+			// Grow existent cells
+			// ------------------------
+			go player_red.Grow(done_red_top, 0, cfg.ROWS/2, &Config)
+			go player_red.Grow(done_red_bottom, cfg.ROWS/2, cfg.ROWS, &Config)
+			go player_green.Grow(done_green_top, 0, cfg.ROWS/2, &Config)
+			go player_green.Grow(done_green_bottom, cfg.ROWS/2, cfg.ROWS, &Config)			
+
+			<- done_red_top
+			<- done_red_bottom
+			<- done_green_top
+			<- done_green_bottom	
 			
+			// Write intermediate amount to final amount
+			for row := 0; row < cfg.ROWS; row++ {
+				for col := 0; col < cfg.COLS; col++ {
+					player_red.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] = player_red.DataGrid.Cells[row][col][cfg.KEY_I_AMOUNT]
+					player_green.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] = player_green.DataGrid.Cells[row][col][cfg.KEY_I_AMOUNT]
+				}
+			}				
+
+			// Update smell so the cells know what's around them
+			// ------------------------
+			// (Use different methods for different players)
+			go player_red.DataGrid.UpdateIntermediateSmell(done_red_top, 0, cfg.ROWS/2, f)
+			go player_red.DataGrid.UpdateIntermediateSmell(done_red_bottom, cfg.ROWS/2, cfg.ROWS, f)
+			go player_green.DataGrid.UpdateIntermediateSmell(done_green_top, 0, cfg.ROWS/2, f)
+			go player_green.DataGrid.UpdateIntermediateSmell(done_green_bottom, cfg.ROWS/2, cfg.ROWS, f)
+		
+			<- done_red_top
+			<- done_red_bottom
+			<- done_green_top
+			<- done_green_bottom
+
+			// Write intermediate smell to final smell
+			for row := 0; row < cfg.ROWS; row++ {
+				for col := 0; col < cfg.COLS; col++ {
+					player_red.DataGrid.Cells[row][col][cfg.KEY_SMELL] = player_red.DataGrid.Cells[row][col][cfg.KEY_I_SMELL]
+					player_green.DataGrid.Cells[row][col][cfg.KEY_SMELL] = player_green.DataGrid.Cells[row][col][cfg.KEY_I_SMELL]
+				}
+			}			
+			
+			// Say where the cell wants to move to 
+			// ------------------------
+			// (saved under intermediate Amount (cfg.KEY_I_AMOUNT))
+			// The move to cfg.KEY_AMOUNT will be finalized when .Battle() is called
+			go player_red.Move(done_red_top, 0, cfg.ROWS/2, f)
+			go player_red.Move(done_red_bottom, cfg.ROWS/2, cfg.ROWS, f)
+			go player_green.Move(done_green_top, 0, cfg.ROWS/2, f)
+			go player_green.Move(done_green_bottom, cfg.ROWS/2, cfg.ROWS, f)			
+
+			<- done_red_top
+			<- done_red_bottom
+			<- done_green_top
+			<- done_green_bottom	
+	
 			// Battle it out on cells where both players have an intermediate amount
-			player_red.Battle()
-
+			// ------------------------
+			// Else, just move cfg.KEY_I_AMOUNT into cfg.KEY_AMOUNT
+			player_red.Battle(f)
+					
 			// Draw result
-			DrawFrame()
+			// ------------------------
+			if SkipDraw == false {
+				DrawFrame()	
+			}
 		}
-
 
 		// Handle events, in this case keyevents and close window
 		for Event = sdl.PollEvent(); Event != nil; Event = sdl.PollEvent() {
@@ -99,13 +168,23 @@ func main() {
 				case *sdl.KeyboardEvent:
 
 					// print in terminal
-					//fmt.Println(msg)
+					fmt.Println(string(t.Keysym.Sym), t.State)
 
 					// on space: restart
 					if t.Keysym.Sym == ' ' && t.State == 0{
 						ResetGame()
 
-					} else if t.Keysym.Sym == '1' && t.State == 1{
+					} else if t.Keysym.Sym == 'f' && t.State == 1{
+						SkipDraw = true
+						
+					} else if t.Keysym.Sym == 'f' && t.State == 0{
+						SkipDraw = false
+						
+					} else if t.Keysym.Sym == 'e' && t.State == 0{
+						Config.FlashyEel = !Config.FlashyEel
+						fmt.Println(Config.FlashyEel)
+						
+					}else if t.Keysym.Sym == '1' && t.State == 1{
 						ValueOfInterest = cfg.KEY_I_AMOUNT
 
 					} else if t.Keysym.Sym == '1' && t.State == 0{
@@ -138,21 +217,22 @@ func main() {
 			}
 		}
 		
-		//running = false
-
-
-			
+		// Track framerate		
+		TickDurationNs = time.Since(TickStart)
+		if TickDurationNs > cfg.INTERVAL_NS {
+			//fmt.Println("Frame missed by ", TickDurationNs - cfg.INTERVAL_NS)
+		} else {
+			time.Sleep(time.Nanosecond * time.Duration(cfg.INTERVAL_NS - TickDurationNs))
+		}	
 	} 
-	
+
 	// ========= End of Game loop =========
 
-	// program is over, time to start shutting down. Keep in mind that sdl is written in C and does not have convenient
+	// Program is over, time to start shutting down. Keep in mind that sdl is written in C and does not have convenient
 	// garbage collection like Go does
 	player_red.Texture.Destroy()
 	player_green.Texture.Destroy()	
 	Graphics.Destroy()
-
-
 }
 
 func InitPlayers() {
@@ -210,9 +290,6 @@ func DrawFrame() {
 
 	// Update screen
 	Renderer.Present()
-
-	// Pause so that our eyes may feast on the result
-	time.Sleep(time.Millisecond * cfg.INTERVAL)
 }
 
 // Should be housed under flood_go/text, but I can't be bothered atm
@@ -230,4 +307,13 @@ func CreateNumberImages() [256]*text.TextObject{
 		})
 	} //NumberImages[0].Image.Texture.SetBlendMode(sdl.BLENDMODE_BLEND) 
 	return NumberImages	
+}
+
+
+
+func Fib(n int) int {
+	if n < 2 {
+			return n
+	}
+	return Fib(n-1) + Fib(n-2)
 }
