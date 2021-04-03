@@ -98,17 +98,7 @@ func main() {
 			<- done_red_top
 			<- done_red_bottom
 			<- done_green_top
-			<- done_green_bottom	
-			
-			// Write intermediate amount to final amount
-			/*
-			for row := 0; row < cfg.ROWS; row++ {
-				for col := 0; col < cfg.COLS; col++ {
-					player_red.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] = player_red.DataGrid.Cells[row][col][cfg.KEY_I_AMOUNT]
-					player_green.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] = player_green.DataGrid.Cells[row][col][cfg.KEY_I_AMOUNT]
-				}
-			}
-			*/				
+			<- done_green_bottom				
 
 			// Update smell so the cells know what's around them
 			// ------------------------
