@@ -141,7 +141,7 @@ func (this *Player) KillAll() {
 // GAME LOOP
 // -------------------------------------------------------------------------------------------------------------------------------------------------
 
-/* cfg.KEY_AMOUNT */
+/* cfg.KEY_AMOUNT +- growth --> cfg.KEY_I_AMOUNT */
 func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Config) {  
 	// references
 	var NeighbourLUT = &(this.DataGrid.NeighbourLUT)
@@ -162,7 +162,6 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 			if Config.FlashyEel == false {
 				growth = 1
 			}
-
 			nb_nz_amount_sum = 0
 
 			// only grow cells with at least 1 amount
@@ -170,15 +169,14 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 				continue
 			}
 
-			// grow if more than two friendly nbs, else: shrink
+			// grow if more than two friendly neighbours, else: shrink
 			nbs = 0
 			for i := 0; i < 4; i++ {
-				nb_row  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_ROW]
-				nb_col  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_COL]
 				nb_exists = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_EXISTS]
-
 				if nb_exists == 0 { continue }
 
+				nb_row  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_ROW]
+				nb_col  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_COL]
 				nb_nz_amount = (*Cells)[nb_row][nb_col][cfg.KEY_AMOUNT]
 				if nb_nz_amount > 0 {
 					nbs ++
@@ -191,10 +189,12 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 				growth = 0
 			}
 
+			// if too crowded, don't grow
 			if nb_nz_amount_sum > 800 {
 				growth = 0
 			}
 
+			// set intm amount, max at 255, min at 0
 			(*Cells)[row][col][cfg.KEY_I_AMOUNT] = misc.Normalize((*Cells)[row][col][cfg.KEY_AMOUNT] + growth, math.MaxInt64, 0) 			
 		}
 	}
@@ -202,7 +202,10 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 	done <- true
 }
 
-
+/* 	Looks around at its neighbours, and determines where to send resources
+	The change in resources is tracked in the intermediate amount register (KEY_I_AMOUNT)
+	This amount will be written to KEY_AMOUNT by Battle() (after the battle of course)
+*/
 /* cfg.KEY_AMOUNT --> cfg.KEY_I_AMOUNT */
 func (this *Player) Move(done chan bool, row_start, row_end int, f float64) {  
 
@@ -222,14 +225,10 @@ func (this *Player) Move(done chan bool, row_start, row_end int, f float64) {
 	}
 
 	done <- true
+
+	// Don't forget to write I_AMOUNT back to AMOUNT after this function has been called!
+	// (This used to be here, but it was moved to main function, so that red and green can share a loop)
 }
-
-/* 	Looks around at its neighbours, and determines where to send resources
-	The change in resources is tracked in the intermediate amount register (KEY_I_AMOUNT)
-	This amount will be written to KEY_AMOUNT by Battle() (after the battle of course)
-
-*/
-
 func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 	// references
 	var Cells = &(this.DataGrid.Cells)
@@ -357,7 +356,6 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 
 	} 
 }
-
 func (this *Player) UpdateIntermediateAmountRandom(row, col int, f float64) {
 	// references
 	var Cells = &(this.DataGrid.Cells)
