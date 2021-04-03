@@ -173,8 +173,8 @@ func InitPlayers() {
 	player_red.SetEnemy(&player_green)
 	player_green.SetEnemy(&player_red)	
 	
-	player_green.SetStartCell(0, 0, 64)
-	player_red.SetStartCell(int(cfg.ROWS - 1), int(cfg.COLS - 1), 64)
+	player_green.SetStartCell(0, int(cfg.COLS / 2), 64)
+	player_red.SetStartCell(int(cfg.ROWS - 1), int(cfg.COLS / 2), 64)
 }
 
 func ResetGame() {
