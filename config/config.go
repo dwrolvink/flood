@@ -6,30 +6,6 @@ import (
 	"time"       // used for pausing, measuring duration, etc
 )
 
-const (
-
-	// Cell Array Keys (used for datagrid.Cells[r][c][KEY])
-	KEY_AMOUNT = 0
-	KEY_I_AMOUNT = 3	// intermediate, used to update amount when moving	
-	KEY_SMELL = 1
-	KEY_I_SMELL = 2		// intermediate, used to update amount when calculating smell
-
-	// LUT Keys (used for datagrid.NeighbourLUT[r][c][KEY])
-	LUTKEY_ROW = 0
-	LUTKEY_COL = 1
-	LUTKEY_EXISTS = 2
-
-	// Screen Settings
-	COLS = 100
-	ROWS = 100
-	CELL_SIZE = 4
-
-	// Loop Settings
-	INTERVAL = 0		// Amount of ms to sleep after each game loop
-
-	// Draw Settings
-	DRAW_BETWEEN_BATTLE = false
-)
 
 type Config struct {
 	ScreenTitle string		// Set by caller

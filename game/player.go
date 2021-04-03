@@ -49,7 +49,7 @@ type Player struct {
 
 func (this *Player) Init(graphics *graphicsx.Graphics) { 
 	// Set empty pixel array
-	this.Pixels = make([]byte, Config.ScreenWidth*Config.ScreenHeight*4)
+	this.InitPixels()
 
 	// Create Texture
 	this.InitTexture(graphics)
@@ -60,6 +60,10 @@ func (this *Player) Init(graphics *graphicsx.Graphics) {
 
 	// Lame print, so we don't have to toggle imports when debugging
 	fmt.Println("")
+}
+
+func (this *Player) InitPixels() {
+	this.Pixels = make([]byte, Config.ScreenWidth*Config.ScreenHeight*4)
 }
 
 func (this *Player) InitTexture(graphics *graphicsx.Graphics) {
@@ -147,9 +151,9 @@ func (this *Player) Move() {
 	for row := 0; row < cfg.ROWS; row++ {
 		for col := 0; col < cfg.COLS; col++ {
 			if this.UserId == 1 {
-				this.UpdateIntermediateAmount(row, col, f)
+				this.UpdateIntermediateAmount2(row, col, f)
 			} else {
-				this.UpdateIntermediateAmount(row, col, f)
+				this.UpdateIntermediateAmount2(row, col, f)
 			}
 		}
 	}
@@ -164,7 +168,7 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 	if this.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] < 2 {
 		return
 	}		
-	amount := this.DataGrid.Cells[row][col][0]
+	amount := this.DataGrid.Cells[row][col][cfg.KEY_AMOUNT]
 
 	// Ephemeral vars (used in loops)
 	var nb_row int
@@ -199,6 +203,7 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 	for i := 0; i < 4; i++ {
 		nb_exists = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_EXISTS]
 		if nb_exists == 0 { continue }
+
 		nb_row  = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_ROW]
 		nb_col  = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_COL]
 
@@ -208,9 +213,9 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 		nbs[i][2] = nb_exists
 
 		// Lookup extra information about our neighbour
-		nbs[i][3] = this.DataGrid.Cells[nb_row][nb_col][cfg.KEY_I_AMOUNT]			// intermediate amount friendly
+		nbs[i][3] = this.DataGrid.Cells[nb_row][nb_col][cfg.KEY_AMOUNT]			// intermediate amount friendly
 		nbs[i][4] = this.DataGrid.Cells[nb_row][nb_col][cfg.KEY_SMELL] 				// smell friendly
-		nbs[i][5] = this.DataGrid.Enemy.Cells[nb_row][nb_col][cfg.KEY_I_AMOUNT]		// intermediate amount enemy
+		nbs[i][5] = this.DataGrid.Enemy.Cells[nb_row][nb_col][cfg.KEY_AMOUNT]		// intermediate amount enemy
 		nbs[i][6] = this.DataGrid.Enemy.Cells[nb_row][nb_col][cfg.KEY_SMELL]		// smell enemy
 
 		
@@ -269,6 +274,128 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 	} 
 }
 
+func (this *Player) UpdateIntermediateAmount2(row, col int, f float64) {
+	// skip if amount < 2
+	if this.DataGrid.Cells[row][col][cfg.KEY_AMOUNT] < 2 {
+		return
+	}		
+	amount := this.DataGrid.Cells[row][col][cfg.KEY_AMOUNT]
+
+	// Ephemeral vars (used in loops)
+	var nb_row int
+	var nb_col int
+	var nb_exists int
+
+	// Keep track of how much to send over, can be changed based on logic
+	var exp_amount uint8
+
+	// Catalog of neighbours that are exceptional in one way or another
+	least_friendly_smell := math.MaxInt64
+	least_friendly_smell_nb := 0
+
+	most_enemy_smell := 0
+	most_enemy_smell_nb := 0
+
+	least_nz_enemy_amount := math.MaxInt64
+	least_nz_enemy_amount_nb := 0	
+
+	least_friendly_amount := math.MaxInt64
+	least_friendly_amount_nb := 0
+
+	least_amount := math.MaxInt64
+	least_amount_nb := 0
+	sum_amount := 0
+
+	// When we pick a neighbour, we can set it here
+	target_neighbour := -1
+
+	// determine amount to send
+	exp_amount = uint8(amount / 2)		//exp_amount = uint8(amount - 1)
+
+	// get list of neighbours, and their data
+	nbs := [4][7]int{} 
+
+	for i := 0; i < 4; i++ {
+		nb_exists = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_EXISTS]
+		if nb_exists == 0 { continue }
+		nb_row  = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_ROW]
+		nb_col  = this.DataGrid.NeighbourLUT[row][col][i][cfg.LUTKEY_COL]
+
+		// Copy neighbour over into shorthand list
+		nbs[i][0] = nb_row 
+		nbs[i][1] = nb_col 
+		nbs[i][2] = nb_exists
+
+		// Lookup extra information about our neighbour
+		nbs[i][3] = this.DataGrid.Cells[nb_row][nb_col][cfg.KEY_AMOUNT]			// intermediate amount friendly
+		nbs[i][4] = this.DataGrid.Cells[nb_row][nb_col][cfg.KEY_SMELL] 				// smell friendly
+		nbs[i][5] = this.DataGrid.Enemy.Cells[nb_row][nb_col][cfg.KEY_AMOUNT]		// intermediate amount enemy
+		nbs[i][6] = this.DataGrid.Enemy.Cells[nb_row][nb_col][cfg.KEY_SMELL]		// smell enemy
+
+		
+		if nbs[i][3] + int(exp_amount) > math.MaxInt64 {
+			continue
+		}
+
+		if nbs[i][3] < least_friendly_amount || nbs[i][3] == least_friendly_amount && f > 0.5 {
+			least_friendly_amount = nbs[i][3]
+			least_friendly_amount_nb = i
+		}
+
+		if nbs[i][4] < least_friendly_smell || nbs[i][4] == least_friendly_smell && f > 0.5{
+			least_friendly_smell = nbs[i][4]
+			least_friendly_smell_nb = i
+		}
+
+		if nbs[i][6] > most_enemy_smell || nbs[i][6] == most_enemy_smell && f > 0.5{
+			most_enemy_smell = nbs[i][6]
+			most_enemy_smell_nb = i
+		}	
+		
+		if nbs[i][5] > 0 && nbs[i][5] < least_nz_enemy_amount || nbs[i][5] == least_nz_enemy_amount && f > 0.5{
+			least_nz_enemy_amount = nbs[i][6]
+			least_nz_enemy_amount_nb = i
+		}
+
+		sum_amount = nbs[i][3] + nbs[i][5]
+		if sum_amount < least_amount || sum_amount == least_amount && f > 0.5 {
+			least_amount = sum_amount
+			least_amount_nb = i
+		}
+	}
+
+	
+	// pick neighbour with highest enemy smell
+	if most_enemy_smell > 0 {
+		target_neighbour = most_enemy_smell_nb
+
+	} else if least_nz_enemy_amount < math.MaxInt64 {
+		target_neighbour = least_nz_enemy_amount_nb
+	} else if least_amount < math.MaxInt64 {
+			target_neighbour = least_amount_nb
+		
+	// pick neighbour with least friendly smell
+	} else if least_friendly_smell < math.MaxInt32 {
+		target_neighbour = least_friendly_smell_nb
+
+	// pick neighbour with least friendly amount (and half exp amount)
+	} else if least_friendly_amount < math.MaxInt32 {
+		exp_amount /= 2
+		target_neighbour = least_friendly_amount_nb
+	} 
+
+
+	// update intermediate amount
+	if target_neighbour != -1 {
+		// expedition
+		var target_row = nbs[target_neighbour][cfg.LUTKEY_ROW]
+		var target_col = nbs[target_neighbour][cfg.LUTKEY_COL]
+
+		this.DataGrid.Cells[row][col][cfg.KEY_I_AMOUNT] -= int(exp_amount)
+		this.DataGrid.Cells[target_row][target_col][cfg.KEY_I_AMOUNT] = misc.Max255Int(this.DataGrid.Cells[target_row][target_col][cfg.KEY_I_AMOUNT], int(exp_amount))
+
+	} 
+}
 /*	Looks at the intermediate amount of a cell, and compares it to the same cell of the enemy
 	When both have a non-zero amount, the result is calculated
 	In either case: write (resultant) intermediate amount back to amount 

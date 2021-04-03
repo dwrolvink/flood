@@ -197,8 +197,13 @@ func NormalizeSmellColor(smell int) int {
 	return 255
 }
 
-func NormalizeAmountColor(amount int) int {
+func NormalizeAmountColor(amount int, max_out bool) int {
 	s := amount
+	if max_out {
+		if s > 0 {
+			return 255
+		}
+	}
 	if s > 255 {
 		return 255
 	}	
@@ -259,26 +264,23 @@ func (this *DataGrid) Draw_PixelBased(numbers_text *[256]*text.TextObject, print
 	// Erase pixels
 	graphicsx.Clear(this.Pixels)
 
-
 	// Convert SDL color to pixel value
 	var color = [4]byte{this.BaseColor.R, this.BaseColor.G, this.BaseColor.B, this.BaseColor.A}
 	
 	// Draw & Rearm Loop
 	var x = int32(0)
 	var y = int32(0)
-	for row := range this.Cells {
-		for col := range this.Cells[row] {
+	for row := 0; row < cfg.ROWS; row++ {
+		for col := 0; col < cfg.COLS; col++ {
 			// get cell 
 			current_cell := this.Cells[row][col]
 			
 			// get draw value
 			draw_value := current_cell[uint8(print_val)]
 			
-			//if draw_value > 0 {
-			if true {
-
+			if draw_value > 0 {
 				if print_val == 0 {
-					draw_value = NormalizeAmountColor(draw_value)
+					draw_value = NormalizeAmountColor(draw_value, false)
 				}	
 				if print_val == 1 {
 					draw_value = NormalizeSmellColor(draw_value)
@@ -288,7 +290,6 @@ func (this *DataGrid) Draw_PixelBased(numbers_text *[256]*text.TextObject, print
 				
 				graphicsx.SetSquare(int(x), int(y), int(cell_size), color, this.Pixels)
 			}			
-
 			x += cell_size
 		}
 		x = 0

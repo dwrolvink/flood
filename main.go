@@ -20,21 +20,8 @@ import (
 import (
 	"flood_go/graphicsx"
 	"flood_go/text"
-	cfg "flood_go/config"
 	"flood_go/game"
-	//"flood_go/datagrid"
-	//"flood_go/misc"
-)
-
-// Define constants
-const (
-	MOUSE_LEFT_CLICK = 1
-	MOUSE_MIDDLE_CLICK = 2
-	MOUSE_RIGHT_CLICK = 3
-	BUTTON_DOWN = 0
-	BUTTON_UP = 1
-
-
+	cfg "flood_go/config"
 )
 
 var (
@@ -59,10 +46,7 @@ var (
 	// GAME GLOBALS
 	player_red game.Player
 	player_green game.Player
-
-
 )
-
 
 
 // This is the entry point for our app. Code execution starts here.
@@ -95,7 +79,7 @@ func main() {
 			}
 			
 			// Battle it out on cells where both players have an intermediate amount
-			player_green.Battle()
+			player_red.Battle()
 
 			// Draw result
 			DrawFrame()
@@ -147,7 +131,7 @@ func main() {
 
 
 				case *sdl.MouseButtonEvent:
-					if (t.State == BUTTON_UP) {
+					if (t.State == cfg.BUTTON_UP) {
 						continue
 					}
 					
@@ -172,7 +156,6 @@ func main() {
 }
 
 func InitPlayers() {
-
 	player_red = game.Player{
 		UserId: 1,
 		Name: "Red",
@@ -232,6 +215,7 @@ func DrawFrame() {
 	time.Sleep(time.Millisecond * cfg.INTERVAL)
 }
 
+// Should be housed under flood_go/text, but I can't be bothered atm
 func CreateNumberImages() [256]*text.TextObject{
 	var NumberImages [256]*text.TextObject
 	for i := range NumberImages {
