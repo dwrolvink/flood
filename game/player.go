@@ -216,7 +216,7 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 	The change in resources is tracked in the intermediate amount register (KEY_I_AMOUNT)
 	This amount will be written to KEY_AMOUNT by Battle() (after the battle of course)
 */
-/* cfg.KEY_AMOUNT --> +=/-= cfg.KEY_I_AMOUNT */
+/* cfg.KEY_AMOUNT --> cfg.KEY_I_AMOUNT */
 func (this *Player) Move(done chan bool, row_start, row_end int, f float64) {  
 	
 	if this.UserId == 1 {
