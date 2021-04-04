@@ -155,6 +155,7 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 	var nb_nz_amount int
 	var nb_nz_amount_sum int
 	var growth = 1
+	var amount int
 
 	for row := row_start; row < row_end; row++ {
 		for col := 0; col < cfg.COLS; col++ {
@@ -164,8 +165,10 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 			}
 			nb_nz_amount_sum = 0
 
+			amount = (*Cells)[row][col][cfg.KEY_AMOUNT]
+
 			// only grow cells with at least 1 amount
-			if (*Cells)[row][col][cfg.KEY_AMOUNT] == 0 {
+			if amount == 0 || amount > 200 {
 				continue
 			}
 
@@ -184,18 +187,13 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 				}
 			}
 
-			// only grow if smaller than 200
-			if (*Cells)[row][col][cfg.KEY_AMOUNT] > 200 {
-				growth = 0
-			}
-
 			// if too crowded, don't grow
 			if nb_nz_amount_sum > 800 {
 				growth = 0
 			}
 
 			// set intm amount, max at 255, min at 0
-			(*Cells)[row][col][cfg.KEY_I_AMOUNT] = misc.Normalize((*Cells)[row][col][cfg.KEY_AMOUNT] + growth, math.MaxInt64, 0) 			
+			(*Cells)[row][col][cfg.KEY_I_AMOUNT] = misc.Normalize(amount + growth, math.MaxInt64, 0) 			
 		}
 	}
 
