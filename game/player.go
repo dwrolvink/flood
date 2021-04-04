@@ -79,7 +79,7 @@ func (this *Player) InitPixels() {
 */ 
 func (this *Player) InitAmount() {
 	// Make Pixel array, in which we'll store the amount data (so that we don't have to build the pixel array)
-	number_of_cells := (cfg.COLS * cfg.CELL_SIZE) * (cfg.ROWS * cfg.CELL_SIZE)
+	number_of_cells := cfg.ROWS * cfg.COLS
 
 	// Fill r,g,b with basecolor value (a will be the amount)
 	color := []byte{this.BaseColor.R, this.BaseColor.G, this.BaseColor.B, 0}
@@ -151,14 +151,10 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 	var nbs = 0
 	var nb_row int
 	var nb_col int
-	var nb_index int
 	var nb_exists int
 	var nb_nz_amount int
 	var nb_nz_amount_sum int
-
-	var amount byte
 	var growth = 1
-	var index int
 
 	for row := row_start; row < row_end; row++ {
 		for col := 0; col < cfg.COLS; col++ {
@@ -168,18 +164,12 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 			}
 			nb_nz_amount_sum = 0
 
-			// Byte index
-			index = this.DataGrid.GetByteIndex(row, col)
-
-			// Get amount
-			amount = this.DataGrid.GetAmount(index)
-
-			// only grow cells with at least 1 amount; don't grow when too full
-			if amount == 0 {
+			// only grow cells with at least 1 amount
+			if (*Cells)[row][col][cfg.KEY_AMOUNT] == 0 {
 				continue
 			}
 
-			// grow if more than two friendly neighbours, else: don't grow
+			// grow if more than two friendly neighbours, else: shrink
 			nbs = 0
 			for i := 0; i < 4; i++ {
 				nb_exists = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_EXISTS]
@@ -187,12 +177,16 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 
 				nb_row  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_ROW]
 				nb_col  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_COL]
-				nb_index = this.DataGrid.GetByteIndex(nb_row, nb_col)
-				nb_nz_amount = int(this.DataGrid.GetAmount(nb_index))
+				nb_nz_amount = (*Cells)[nb_row][nb_col][cfg.KEY_AMOUNT]
 				if nb_nz_amount > 0 {
 					nbs ++
 					nb_nz_amount_sum += nb_nz_amount
 				}
+			}
+
+			// only grow if smaller than 200
+			if (*Cells)[row][col][cfg.KEY_AMOUNT] > 200 {
+				growth = 0
 			}
 
 			// if too crowded, don't grow
@@ -200,12 +194,8 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 				growth = 0
 			}
 
-			if amount > 200 {
-				growth = 0
-			}
-
 			// set intm amount, max at 255, min at 0
-			(*Cells)[row][col][cfg.KEY_I_AMOUNT] = misc.Normalize((int(amount) + growth), math.MaxInt64, 0) 			
+			(*Cells)[row][col][cfg.KEY_I_AMOUNT] = misc.Normalize((*Cells)[row][col][cfg.KEY_AMOUNT] + growth, math.MaxInt64, 0) 			
 		}
 	}
 
@@ -216,12 +206,13 @@ func (this *Player) Grow(done chan bool, row_start, row_end int, Config *cfg.Con
 	The change in resources is tracked in the intermediate amount register (KEY_I_AMOUNT)
 	This amount will be written to KEY_AMOUNT by Battle() (after the battle of course)
 */
-/* cfg.KEY_AMOUNT --> cfg.KEY_I_AMOUNT */
+/* cfg.KEY_AMOUNT --> +=/-= cfg.KEY_I_AMOUNT */
 func (this *Player) Move(done chan bool, row_start, row_end int, f float64) {  
-	
+
 	if this.UserId == 1 {
 		for row := row_start; row < row_end; row++ {
 			for col := 0; col < cfg.COLS; col++ {
+				
 				this.UpdateIntermediateAmount(row, col, f)
 			}
 		}
@@ -243,21 +234,16 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 	var Cells = &(this.DataGrid.Cells)
 	var EnemyCells = &(this.DataGrid.Enemy.Cells)
 	var NeighbourLUT = &(this.DataGrid.NeighbourLUT)
-
-	// Byte index
-	var index = this.DataGrid.GetByteIndex(row, col)
 		
 	// skip if amount < 2
-	// 	if (*Cells)[row][col][cfg.KEY_AMOUNT] < 2 {
-	if this.DataGrid.GetAmount(index) < 2 {
+	if (*Cells)[row][col][cfg.KEY_AMOUNT] < 2 {
 		return
 	}		
-	amount := this.DataGrid.GetAmount(index)
+	amount := (*Cells)[row][col][cfg.KEY_AMOUNT]
 
 	// Ephemeral vars (used in loops)
 	var nb_row int
 	var nb_col int
-	var nb_index int
 	var nb_exists int
 
 	// Keep track of how much to send over, can be changed based on logic
@@ -294,17 +280,15 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 		nb_row  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_ROW]
 		nb_col  = (*NeighbourLUT)[row][col][i][cfg.LUTKEY_COL]
 
-		nb_index = this.DataGrid.GetByteIndex(nb_row, nb_col)
-
 		// Copy neighbour over into shorthand list
 		nbs[i][0] = nb_row 
 		nbs[i][1] = nb_col 
 		nbs[i][2] = nb_exists
 
 		// Lookup extra information about our neighbour
-		nbs[i][3] = int(this.DataGrid.GetAmount(nb_index))				// intermediate amount friendly
-		nbs[i][4] = (*Cells)[nb_row][nb_col][cfg.KEY_SMELL] 			// smell friendly
-		nbs[i][5] = int(this.DataGrid.Enemy.GetAmount(nb_index))		// intermediate amount enemy
+		nbs[i][3] = (*Cells)[nb_row][nb_col][cfg.KEY_AMOUNT]			// intermediate amount friendly
+		nbs[i][4] = (*Cells)[nb_row][nb_col][cfg.KEY_SMELL] 				// smell friendly
+		nbs[i][5] = (*EnemyCells)[nb_row][nb_col][cfg.KEY_AMOUNT]		// intermediate amount enemy
 		nbs[i][6] = (*EnemyCells)[nb_row][nb_col][cfg.KEY_SMELL]		// smell enemy
 
 		
@@ -339,6 +323,7 @@ func (this *Player) UpdateIntermediateAmount(row, col int, f float64) {
 		}
 	}
 
+	
 	// pick neighbour with highest enemy smell
 	if most_enemy_smell_nb != -1 {
 		target_neighbour = most_enemy_smell_nb
@@ -532,6 +517,6 @@ func (this *Player) DrawPixels(done chan bool, numbers_text *[256]*text.TextObje
 /* Couldn't put this in with DrawPixels :( SDL doesn't cooperate well with goroutines */
 func (this *Player) UpdateTexture() {
 	var ScreenWidth = cfg.COLS * cfg.CELL_SIZE
-	this.Texture.Update(nil, this.Amount, int(ScreenWidth*4))
+	this.Texture.Update(nil, this.Pixels, int(ScreenWidth*4))
 }
 

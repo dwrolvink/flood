@@ -2,8 +2,8 @@ package config
 
 const (
 	// Screen Settings
-	COLS = 200
-	ROWS = 200
+	COLS = 220
+	ROWS = 220
 	CELL_SIZE = 3
 
 	// Loop Settings

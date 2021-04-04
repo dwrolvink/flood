@@ -39,7 +39,6 @@ type DataGrid struct {
 	Amount *[]byte
 }
 
-
 func (this *DataGrid) Init() {
 	this.CalculateNeighbourLUT()
 	fmt.Println("")
@@ -58,43 +57,16 @@ func (this *DataGrid) Clear() {
 	}
 }
 
-// temp
-func (this *DataGrid) SetAmount(index int, value byte) {
-	(*this.Amount)[index] = value
-}
-func (this *DataGrid) GetAmount(index int) byte {
-	return (*this.Amount)[index]
-}
-func (this *DataGrid) SetIAmount(row, col, value int) {
-	this.Cells[row][col][cfg.KEY_I_AMOUNT] = value
-}
-func (this *DataGrid) GetIAmount(row, col int) int {
-	return this.Cells[row][col][cfg.KEY_I_AMOUNT]
-}
-func (this *DataGrid) GetByteIndex(row, col int) int {
-	var cell_length = cfg.CELL_SIZE * 4 	// 4 bytes per pixel, N pixels per cell
-	var start = 3 							// first pixel starts at position 3 (4th byte)
-	var index = start + (cell_length * col)   // get position in row
-	index += (cell_length * cfg.COLS) * row * cfg.CELL_SIZE		// move N rows down to get position in grid
-
-	return index
-}
 /* Set cfg.KEY_AMOUNT and cfg.KEY_I_AMOUNT simultaneously */
 func (this *DataGrid) SetCell(row, col int, amount int) {  
-	//this.Cells[row][col][cfg.KEY_AMOUNT] = amount 
-	//this.Cells[row][col][cfg.KEY_I_AMOUNT] = amount 
-
-	// temp
-	index := this.GetByteIndex(row, col)
-	this.SetAmount(index, uint8(amount))
-	this.SetIAmount(row, col, amount)
+	this.Cells[row][col][cfg.KEY_AMOUNT] = amount 
+	this.Cells[row][col][cfg.KEY_I_AMOUNT] = amount 
 }
 
 /* Alias for SetCell(r, c, 0) */
 func (this *DataGrid) Kill(row, col int) {
 	this.SetCell(row, col, 0)
 }
-
 
 /* 	Makes a lookup table that allows us to lookup if cell r,c has 
    	top/bottom/left/right neighbour  
@@ -144,19 +116,16 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 	var NeighbourLUT = &(this.NeighbourLUT)
 	var Cells = &(this.Cells)
 
-	var index = this.GetByteIndex(row, col)
-
 	// Ephemeral
 	var nb_row int
 	var nb_col int
-	var nb_index int
 	var nb_smell int
 	var nb_amount int
 
 	// Used to calc the avg
 	number_of_nbs := 0
 	total_sum := 0
-	amount := int(this.GetAmount(index))
+	amount := (*Cells)[row][col][cfg.KEY_AMOUNT]
 
 	// Collect data from all (existing) neighbours
 	for i := 0; i < 4; i++ {
@@ -173,9 +142,8 @@ func (this *DataGrid) GetAvgSmell(row, col, depth int) int {
 
 			// Else: calc new smell for the cell & add to total
 			} else {
-				nb_index = this.GetByteIndex(nb_row, nb_col)
 				nb_smell = (*Cells)[nb_row][nb_col][cfg.KEY_SMELL]
-				nb_amount = int(this.GetAmount(nb_index))
+				nb_amount = (*Cells)[nb_row][nb_col][cfg.KEY_AMOUNT]
 				total_sum += nb_smell + nb_amount
 			}
 		}
