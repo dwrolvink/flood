@@ -59,6 +59,8 @@ func main() {
 
 	InitPlayers()
 
+	fmt.Println(player_red.DataGrid.GetByteIndex(1,0))
+
 	// Set the color that the screen will be cleared at
 	// (This will do little now that we use pixel based drawing)
 	Renderer.SetDrawColor(0, 0, 0, 0)           // red, green, blue, alpha (alpha = transparency)
@@ -259,6 +261,7 @@ func DrawFrame() {
 	Renderer.Clear()
 
 	// Build pixel arrays based on game data
+	/*
 	done_red := make(chan bool)
 	done_green := make(chan bool)
 
@@ -267,6 +270,7 @@ func DrawFrame() {
 
 	<- done_red
 	<- done_green
+	*/
 
 	// Build textures from the pixel arrays, for each player
 	// 		This would be together in one function with drawpixels, 

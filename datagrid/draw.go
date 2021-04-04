@@ -160,6 +160,4 @@ func (this *DataGrid) Draw_PixelBasedDotted(done chan bool, row_start, row_end i
 	}
 
 	done <- true
-
-	
 }
