@@ -39,6 +39,22 @@ type DataGrid struct {
 	Amount *[]byte
 }
 
+// temp
+func (this *DataGrid) SetAmount(index int, value byte) {
+	this.Amount[index] = value
+}
+func (this *DataGrid) GetAmount(index int, value byte) byte {
+	return this.Amount[index]
+}
+func (this *DataGrid) GetByteIndex(row, col int) {
+	var cell_length = cfg.CELL_SIZE * 4 	// 4 bytes per pixel, N pixels per cell
+	var start = 3 							// first pixel starts at position 3 (4th byte)
+	var index = start + cell_length * col   // get position in row
+	index += cell_length * col * row		// move N rows down to get position in grid
+
+	return index
+}
+
 func (this *DataGrid) Init() {
 	this.CalculateNeighbourLUT()
 	fmt.Println("")
@@ -61,6 +77,10 @@ func (this *DataGrid) Clear() {
 func (this *DataGrid) SetCell(row, col int, amount int) {  
 	this.Cells[row][col][cfg.KEY_AMOUNT] = amount 
 	this.Cells[row][col][cfg.KEY_I_AMOUNT] = amount 
+
+	// temp
+	index := this.GetByteIndex(row, col)
+	this.SetAmount(index, uint8(amount))
 }
 
 /* Alias for SetCell(r, c, 0) */
